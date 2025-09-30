@@ -1,0 +1,102 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  password  String
+  plan      Plan     @default(FREE)
+  scansUsed Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  scans     Scan[]
+  
+  @@map("users")
+}
+
+model Scan {
+  id               String           @id @default(cuid())
+  userId           String
+  fileName         String
+  fileType         FileType
+  fileSize         Int
+  filePath         String
+  extractedText    String?
+  overallRiskScore Int?
+  riskLevel        RiskLevel?
+  violationCount   Int              @default(0)
+  status           ScanStatus       @default(PROCESSING)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  violations       Violation[]
+  
+  @@map("scans")
+}
+
+model Violation {
+  id              String        @id @default(cuid())
+  scanId          String
+  textSnippet     String
+  violationType   ViolationType
+  description     String
+  severity        Severity
+  recommendation  String
+  confidence      Float
+  createdAt       DateTime      @default(now())
+  
+  scan            Scan          @relation(fields: [scanId], references: [id], onDelete: Cascade)
+  
+  @@map("violations")
+}
+
+enum Plan {
+  FREE
+  PREMIUM
+}
+
+enum FileType {
+  IMAGE
+  AUDIO
+  VIDEO
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum ScanStatus {
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum ViolationType {
+  CONTENT_MODERATION
+  COMPLIANCE
+  PRIVACY
+  HATE_SPEECH
+  VIOLENCE
+  ADULT_CONTENT
+  SPAM
+}
+
+enum Severity {
+  LOW
+  MEDIUM
+  HIGH
+}
